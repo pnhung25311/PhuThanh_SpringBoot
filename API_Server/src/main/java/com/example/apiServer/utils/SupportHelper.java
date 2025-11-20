@@ -12,19 +12,26 @@ import jakarta.persistence.Query;
 @SuppressWarnings("unchecked") // Thêm vào để tắt cảnh báo kiểu không kiểm tra
 public class SupportHelper {
 
-    public static Double getSumQtyByProduct(EntityManager entityManager, String productID) {
-        String sqlSum = "SELECT SUM(qty) FROM History GROUP BY productID HAVING ProductID = '" + productID + "'";
+    public static Double getSumQtyByProduct(EntityManager entityManager, String DataWareHouseAID, String table) {
+        System.out.println("===================================");
+        System.out.println(table);
+        String sqlSum = "SELECT SUM(qty) FROM " + table + " GROUP BY DataWareHouseAID HAVING DataWareHouseAID = '"
+                + DataWareHouseAID + "'";
         Query query = entityManager.createNativeQuery(sqlSum);
         Object result = query.getSingleResult();
         return result != null ? ((Number) result).doubleValue() : 0.0;
     }
 
-    public static void updateWareHouseQty(EntityManager entityManager, String table, String productID, Double sumQty) {
+    public static void updateWareHouseQty(EntityManager entityManager, String table, String DataWareHouseAID, Double sumQty) {
+        System.out.println(table);
+        System.out.println(sumQty);
+        System.out.println(DataWareHouseAID);
+
         Query query = entityManager.createNativeQuery(
-                "UPDATE " + table + " SET Qty = :qty, LastModifiedTime = :time WHERE productID = :id");
+                "UPDATE " + table + " SET Qty = :qty, LastTime = :time WHERE DataWareHouseAID = :id");
         query.setParameter("qty", sumQty);
         query.setParameter("time", LocalDate.now());
-        query.setParameter("id", productID);
+        query.setParameter("id", DataWareHouseAID);
         query.executeUpdate();
 
     }

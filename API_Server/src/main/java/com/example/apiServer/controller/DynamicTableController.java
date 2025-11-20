@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -28,10 +29,17 @@ public class DynamicTableController {
     }
 
     @GetMapping("/get-all/{table}")
-    public List<Map<String, Object>> getAll(
-            @PathVariable String table) {
+    public List<Map<String, Object>> getAll(@PathVariable String table) {
+        long start = System.currentTimeMillis(); // ⏱️ bắt đầu đo
 
-        return service.findAll(table);
+        List<Map<String, Object>> result = service.findAll(table);
+
+        long end = System.currentTimeMillis(); // ⏱️ kết thúc đo
+        long duration = end - start;
+
+        System.out.println("⏱️ Thời gian thực thi findAllPagedParallel: " + duration + " ms");
+
+        return result;
     }
 
     @GetMapping("/get-all/{table}/{limit}")
@@ -105,6 +113,11 @@ public class DynamicTableController {
         return service.searchWareHouse(table, keyWord);
     }
 
+    // @GetMapping("/tables")
+    // public List<Map<String, Object>> getTables() {
+    // return service.getItemWarehouse();
+    // }
+
     @GetMapping("/tables")
     public List<String> getTables() {
         return service.getItemWarehouse();
@@ -115,4 +128,46 @@ public class DynamicTableController {
             @PathVariable String condition) {
         return service.findItemByCondition(table, column, condition);
     }
+
+    
+    @GetMapping("/find-history/{table}/{column}/{condition}")
+    public List<Map<String, Object>> findItemByConditionHistory(@PathVariable String table, @PathVariable String column,
+            @PathVariable String condition) {
+        return service.findItemByConditionHistory(table, column, condition);
+    }
+
+    @GetMapping("/get-all/pages/{table}")
+    public ResponseEntity<List<Map<String, Object>>> findAll(
+            @PathVariable String table,
+            @RequestParam(defaultValue = "100") int size,
+            @RequestParam(defaultValue = "8") int threads) {
+
+        long start = System.currentTimeMillis(); // ⏱️ bắt đầu đo
+        try {
+            List<Map<String, Object>> result = service.findAllPagedParallel(table, size, threads);
+            long end = System.currentTimeMillis(); // ⏱️ kết thúc đo
+            long duration = end - start;
+
+            System.out.println("⏱️ Thời gian thực thi findAllPagedParallel: " + duration + " ms");
+
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            long end = System.currentTimeMillis();
+            System.err.println("❌ Lỗi sau " + (end - start) + " ms: " + e.getMessage());
+
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(List.of(Map.of("error", e.getMessage())));
+        }
+    }
+
+    @PostMapping("/check-exists/{table}")
+    public boolean checkExists(
+            @PathVariable String table,
+            @RequestBody Map<String, Object> body) {
+
+        String value = body.get("ProductID").toString();
+        return service.checkByProductID(table, value);
+    }
+
 }
