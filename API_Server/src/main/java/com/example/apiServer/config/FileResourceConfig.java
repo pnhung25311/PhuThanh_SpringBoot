@@ -10,8 +10,8 @@ public class FileResourceConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // URL public
-        registry.addResourceHandler("/images/**")
+        registry.addResourceHandler("/PYS Images/**")
                 // Đường dẫn thật trên ổ đĩa (phải có "file:" + dấu / ở cuối)
-                .addResourceLocations("file:D:/Data/Storage/images/");
+                .addResourceLocations("file:///E:/Images Server/PYS Images/");
     }
 }
