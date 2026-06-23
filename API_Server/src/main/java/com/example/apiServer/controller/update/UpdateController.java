@@ -25,7 +25,7 @@ public class UpdateController {
 
         Map<String, Object> response = new HashMap<>();
         // String linkUpdate = "http://localhost:8080/update/download";
-        String linkUpdate = "http://192.168.1.54:2010/update/download";
+        String linkUpdate = "http://192.168.1.54:2010/api/file/update/download-version";
 
         response.put("latestVersion", updateInfo.get("Version"));
         response.put("downloadUrl", linkUpdate);

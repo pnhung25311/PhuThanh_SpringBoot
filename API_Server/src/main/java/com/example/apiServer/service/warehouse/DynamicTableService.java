@@ -632,6 +632,32 @@ public class DynamicTableService {
         return mapped.get(0);
     }
 
+    public Map<String, Object> findActiveUserByUser(String userName) {
+
+        String sql = """
+                    SELECT *
+                    FROM Account
+                    WHERE UserName = :id
+                      AND Status = :status
+                """;
+        System.out.println(sql);
+
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("id", userName);
+        query.setParameter("status", "ACTIVE_STATUS");
+        List<Object[]> result = query.getResultList();
+
+        if (result.isEmpty()) {
+            return null; // user không tồn tại hoặc đã inactive
+        }
+
+        List<String> columns = SupportHelper.getColumnNames(entityManager, "Account");
+
+        List<Map<String, Object>> mapped = SupportHelper.mapResults(entityManager, result, columns);
+
+        return mapped.get(0);
+    }
+
     @Transactional
     public void createOrder(Map<String, Object> data) {
 

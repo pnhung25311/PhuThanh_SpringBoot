@@ -3,24 +3,26 @@ package com.example.apiServer.telegram.exception;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import com.example.apiServer.telegram.service.TelegramService;
-import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.http.HttpStatus;
+
 import lombok.RequiredArgsConstructor;
 
 @RestControllerAdvice
 @RequiredArgsConstructor
 public class GlobalExceptionHandler {
 
-    private final TelegramService telegramService;
+// 🎯 THÊM HOẶC SỬA HÀM NÀY ĐỂ CHẶN LỖI FILE TĨNH, KHÔNG CHO BIẾN THÀNH LỖI 500
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Object> handleNoResourceFound(NoResourceFoundException ex) {
+        // Trả về 404 mặc định để Spring Boot Admin tự xử lý luồng đi nội bộ của nó
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
 
+    // Đây là hàm bắt lỗi chung hiện tại của bạn, giữ nguyên nó
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<String> handleAllException(Exception ex, HttpServletRequest request) {
-        // log ra console
-        ex.printStackTrace();
-
-        // gửi thông báo Telegram
-        telegramService.send("❌ LỖI HỆ THỐNG\n" + ex.getMessage());
-
-        return ResponseEntity.status(500).body("Có lỗi xảy ra: " + ex.getMessage());
+    public ResponseEntity<String> handleAllExceptions(Exception ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                             .body("Có lỗi xảy ra: " + ex.getMessage());
     }
 }

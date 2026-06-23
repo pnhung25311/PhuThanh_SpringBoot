@@ -28,7 +28,8 @@ public class SecurityConfig {
                                                                 "/api/upload-guarantee/**",
                                                                 "/api/upload/**",
                                                                 "/ws/**",
-                                                                "/update/**",
+                                                                "/api/file/update/**",
+                                                                "/api/files/**",
                                                                 "/api/update/**",
                                                                 "/api/dynamic/version-warehouse",
                                                                 "/api/business/get-all")
