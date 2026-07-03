@@ -1,6 +1,5 @@
 package com.example.apiServer.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -11,8 +10,12 @@ import com.example.apiServer.service.warehouse.FileStorageService;
 @RequestMapping("/api/")
 public class FileUploadController {
 
-    @Autowired
-    private FileStorageService sftpService;
+    private final FileStorageService sftpService;
+
+    // Constructor Injection replaces @Autowired on fields
+    public FileUploadController(FileStorageService sftpService) {
+        this.sftpService = sftpService;
+    }
 
     // POST /api/sftp/upload/{productID}
     // Trả về plain String (URL) nếu thành công, hoặc lỗi (status 500 + message)

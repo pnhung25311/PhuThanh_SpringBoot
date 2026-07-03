@@ -4,7 +4,6 @@ import com.example.apiServer.model.file.FileItem;
 import com.example.apiServer.service.file.FileService;
 import com.example.apiServer.service.warehouse.DynamicTableService;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -25,10 +24,14 @@ import java.util.Map;
 @RequestMapping("/api") // Cấu trúc định tuyến thống nhất cho ApiClient Flutter
 public class FileController {
 
-    @Autowired
-    private FileService fileService;
-    @Autowired
-    private DynamicTableService dynamicTableService;
+    private final FileService fileService;
+    private final DynamicTableService dynamicTableService;
+
+    // Constructor Injection replaces @Autowired on fields
+    public FileController(FileService fileService, DynamicTableService dynamicTableService) {
+        this.fileService = fileService;
+        this.dynamicTableService = dynamicTableService;
+    }
 
     /**
      * Hàm tiện ích: Lấy tự động Account ID từ Spring Security JWT Context
@@ -237,7 +240,6 @@ public class FileController {
         }
     }
 
-
     /**
      * 4b. API SAO CHÉP (COPY) FILE HOẶC THƯ MỤC
      * Endpoint: POST /api/files/copy?sourcePath=...&targetDirectoryPath=...
@@ -251,7 +253,8 @@ public class FileController {
             fileService.copyFileOrFolder(accountId, sourcePath, targetDirectoryPath);
             return ResponseEntity.ok("Sao chép dữ liệu thành công!");
         } catch (Exception e) {
-            // Trả về mã lỗi 403 nếu vi phạm phân quyền canWrite hoặc không tìm thấy đường dẫn
+            // Trả về mã lỗi 403 nếu vi phạm phân quyền canWrite hoặc không tìm thấy đường
+            // dẫn
             return ResponseEntity.status(403).body("Lỗi khi sao chép: " + e.getMessage());
         }
     }
@@ -280,7 +283,7 @@ public class FileController {
         try {
             String parentPath = payload.get("parentPath");
             String folderName = payload.get("folderName");
-            int accountId = Integer.parseInt( payload.get("accountId"));
+            int accountId = Integer.parseInt(payload.get("accountId"));
             fileService.createFolder(accountId, parentPath, folderName);
             return ResponseEntity.ok("Tạo thư mục thành công!");
         } catch (Exception e) {
@@ -295,7 +298,7 @@ public class FileController {
         try {
             String currentPath = payload.get("currentPath");
             String newName = payload.get("newName");
-            int accountId = Integer.parseInt( payload.get("accountId"));
+            int accountId = Integer.parseInt(payload.get("accountId"));
             fileService.renameItem(accountId, currentPath, newName);
             return ResponseEntity.ok("Đổi tên thành công!");
         } catch (Exception e) {

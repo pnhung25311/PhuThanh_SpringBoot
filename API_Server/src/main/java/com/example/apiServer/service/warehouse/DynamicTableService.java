@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 import com.example.apiServer.telegram.service.TelegramService;
 import com.example.apiServer.utils.SupportHelper;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import jakarta.persistence.Query;
@@ -36,12 +35,12 @@ public class DynamicTableService {
     @PersistenceContext
     private EntityManager entityManager;
 
-    @Autowired
-    private EntityManagerFactory entityManagerFactory;
+    private final EntityManagerFactory entityManagerFactory;
     private final TelegramService telegramService;
 
-    public DynamicTableService(TelegramService telegramService) {
+    public DynamicTableService(TelegramService telegramService, EntityManagerFactory entityManagerFactory) {
         this.telegramService = telegramService;
+        this.entityManagerFactory = entityManagerFactory;
     }
 
     private final String FILE_PATH_UPDATE = "L:\\Phòng CN&KT-Hưng\\update_version\\update_version.txt";

@@ -5,7 +5,8 @@ import com.example.apiServer.model.file.FolderPermission;
 import com.example.apiServer.model.file.ShareRoot;
 import com.example.apiServer.repository.FolderPermissionRepository;
 import com.example.apiServer.repository.ShareRootRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.apiServer.service.warehouse.DynamicTableService;
+
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.core.io.Resource;
@@ -13,7 +14,9 @@ import org.springframework.core.io.Resource;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.*;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 import java.net.URLDecoder;
@@ -22,11 +25,18 @@ import java.nio.charset.StandardCharsets;
 @Service
 public class FileService {
 
-    @Autowired
-    private ShareRootRepository shareRootRepository;
+    private final ShareRootRepository shareRootRepository;
+    private final FolderPermissionRepository folderPermissionRepository;
 
-    @Autowired
-    private FolderPermissionRepository folderPermissionRepository;
+    private final DynamicTableService dynamicTableService;
+
+    // Constructor Injection
+    public FileService(ShareRootRepository shareRootRepository,
+            FolderPermissionRepository folderPermissionRepository, DynamicTableService dynamicTableService) {
+        this.shareRootRepository = shareRootRepository;
+        this.folderPermissionRepository = folderPermissionRepository;
+        this.dynamicTableService = dynamicTableService;
+    }
 
     /**
      * LOGIC LÕI CẢI TIẾN: Kiểm tra và lấy danh sách quyền hợp lệ (Không bốc bừa
@@ -444,7 +454,11 @@ public class FileService {
             throw new RuntimeException("Cảnh báo bảo mật: Tên đường dẫn file hoặc cấu trúc tệp không hợp lệ!");
         }
 
+
+
         Files.write(targetFilePath, content, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+        System.out.println("Đường dẫn upload là: " + targetFilePath.toString());
+        // saveHistoryAction("Uplo", accountId);
     }
 
     public List<FileItem> getAvailableDrivesAsItems(int accountId) {
@@ -488,11 +502,12 @@ public class FileService {
 
         // 1. Phân tích và kiểm tra phân quyền nguồn (Cần quyền Read)
         String decodedSrc = URLDecoder.decode(sourcePath, StandardCharsets.UTF_8).trim().replace("\\", "/");
-        if (decodedSrc.startsWith("/")) decodedSrc = decodedSrc.substring(1);
+        if (decodedSrc.startsWith("/"))
+            decodedSrc = decodedSrc.substring(1);
         int srcSlash = decodedSrc.indexOf('/');
         String srcAlias = srcSlash != -1 ? decodedSrc.substring(0, srcSlash) : decodedSrc;
         String srcRel = srcSlash != -1 ? decodedSrc.substring(srcSlash + 1) : "";
-        
+
         Path srcPhysical = getPhysicalSafePath(srcAlias, srcRel).toAbsolutePath().normalize();
         if (!Files.exists(srcPhysical)) {
             throw new RuntimeException("Thành phần nguồn không tồn tại trên hệ thống!");
@@ -502,9 +517,11 @@ public class FileService {
 
         // 2. Phân tích và kiểm tra phân quyền thư mục đích (Cần quyền WRITE)
         String decodedTarget = URLDecoder.decode(targetDirectoryPath, StandardCharsets.UTF_8).trim().replace("\\", "/");
-        if (decodedTarget.startsWith("/")) decodedTarget = decodedTarget.substring(1);
-        if (decodedTarget.endsWith("/")) decodedTarget = decodedTarget.substring(0, decodedTarget.length() - 1);
-        
+        if (decodedTarget.startsWith("/"))
+            decodedTarget = decodedTarget.substring(1);
+        if (decodedTarget.endsWith("/"))
+            decodedTarget = decodedTarget.substring(0, decodedTarget.length() - 1);
+
         int targetSlash = decodedTarget.indexOf('/');
         String targetAlias = targetSlash != -1 ? decodedTarget.substring(0, targetSlash) : decodedTarget;
         String targetRel = targetSlash != -1 ? decodedTarget.substring(targetSlash + 1) : "";
@@ -555,13 +572,15 @@ public class FileService {
             throw new RuntimeException("Đường dẫn nguồn hoặc đích không được để trống!");
         }
 
-        // 1. Phân tích nguồn và kiểm tra quyền XÓA tại nguồn (Vì di chuyển sẽ làm mất file nguồn)
+        // 1. Phân tích nguồn và kiểm tra quyền XÓA tại nguồn (Vì di chuyển sẽ làm mất
+        // file nguồn)
         String decodedSrc = URLDecoder.decode(sourcePath, StandardCharsets.UTF_8).trim().replace("\\", "/");
-        if (decodedSrc.startsWith("/")) decodedSrc = decodedSrc.substring(1);
+        if (decodedSrc.startsWith("/"))
+            decodedSrc = decodedSrc.substring(1);
         int srcSlash = decodedSrc.indexOf('/');
         String srcAlias = srcSlash != -1 ? decodedSrc.substring(0, srcSlash) : decodedSrc;
         String srcRel = srcSlash != -1 ? decodedSrc.substring(srcSlash + 1) : "";
-        
+
         Path srcPhysical = getPhysicalSafePath(srcAlias, srcRel).toAbsolutePath().normalize();
         if (!Files.exists(srcPhysical)) {
             throw new RuntimeException("Thành phần nguồn không tồn tại!");
@@ -589,9 +608,11 @@ public class FileService {
 
         // 2. Phân tích đích và kiểm tra quyền GHI tại đích
         String decodedTarget = URLDecoder.decode(targetDirectoryPath, StandardCharsets.UTF_8).trim().replace("\\", "/");
-        if (decodedTarget.startsWith("/")) decodedTarget = decodedTarget.substring(1);
-        if (decodedTarget.endsWith("/")) decodedTarget = decodedTarget.substring(0, decodedTarget.length() - 1);
-        
+        if (decodedTarget.startsWith("/"))
+            decodedTarget = decodedTarget.substring(1);
+        if (decodedTarget.endsWith("/"))
+            decodedTarget = decodedTarget.substring(0, decodedTarget.length() - 1);
+
         int targetSlash = decodedTarget.indexOf('/');
         String targetAlias = targetSlash != -1 ? decodedTarget.substring(0, targetSlash) : decodedTarget;
         String targetRel = targetSlash != -1 ? decodedTarget.substring(targetSlash + 1) : "";
@@ -615,95 +636,106 @@ public class FileService {
         if (!Files.exists(targetDirPhysical)) {
             Files.createDirectories(targetDirPhysical);
         }
-        
-        // Sử dụng ATOMIC_MOVE nếu cùng ổ đĩa, hoặc REPLACE_EXISTING nếu ghi đè file trùng tên trùng cấu trúc
+
+        // Sử dụng ATOMIC_MOVE nếu cùng ổ đĩa, hoặc REPLACE_EXISTING nếu ghi đè file
+        // trùng tên trùng cấu trúc
         Files.move(srcPhysical, destPhysical, StandardCopyOption.REPLACE_EXISTING);
     }
 
     /**
- * Chức năng tạo thư mục mới
- */
-public void createFolder(int accountId, String parentPath, String folderName) throws IOException {
-    if (parentPath == null || folderName == null || folderName.isBlank()) {
-        throw new RuntimeException("Đường dẫn cha hoặc tên thư mục không được để trống!");
+     * Chức năng tạo thư mục mới
+     */
+    public void createFolder(int accountId, String parentPath, String folderName) throws IOException {
+        if (parentPath == null || folderName == null || folderName.isBlank()) {
+            throw new RuntimeException("Đường dẫn cha hoặc tên thư mục không được để trống!");
+        }
+
+        // 1. Phân tích alias và relative path từ parentPath
+        String decodedParent = URLDecoder.decode(parentPath, StandardCharsets.UTF_8).trim().replace("\\", "/");
+        if (decodedParent.startsWith("/"))
+            decodedParent = decodedParent.substring(1);
+
+        int firstSlash = decodedParent.indexOf('/');
+        String aliasName = firstSlash != -1 ? decodedParent.substring(0, firstSlash) : decodedParent;
+        String relativePath = firstSlash != -1 ? decodedParent.substring(firstSlash + 1) : "";
+
+        // 2. Kiểm tra quyền WRITE tại thư mục cha
+        List<FolderPermission> permissions = getValidPermissions(accountId, aliasName, relativePath);
+        String accountToken = "," + accountId + ",";
+        boolean canWrite = permissions.stream()
+                .anyMatch(p -> p.getWriteAccountIds() != null && p.getWriteAccountIds().contains(accountToken));
+
+        if (!canWrite) {
+            throw new RuntimeException("Access Denied: Bạn không có quyền tạo thư mục tại đây!");
+        }
+
+        // 3. Tạo đường dẫn vật lý và kiểm tra tồn tại
+        Path parentDir = getPhysicalSafePath(aliasName, relativePath).toAbsolutePath().normalize();
+        Path newFolderPath = parentDir.resolve(folderName).normalize();
+
+        if (Files.exists(newFolderPath)) {
+            throw new RuntimeException("Thư mục đã tồn tại: " + folderName);
+        }
+
+        Files.createDirectory(newFolderPath);
     }
 
-    // 1. Phân tích alias và relative path từ parentPath
-    String decodedParent = URLDecoder.decode(parentPath, StandardCharsets.UTF_8).trim().replace("\\", "/");
-    if (decodedParent.startsWith("/")) decodedParent = decodedParent.substring(1);
-    
-    int firstSlash = decodedParent.indexOf('/');
-    String aliasName = firstSlash != -1 ? decodedParent.substring(0, firstSlash) : decodedParent;
-    String relativePath = firstSlash != -1 ? decodedParent.substring(firstSlash + 1) : "";
+    /**
+     * Chức năng đổi tên file hoặc thư mục
+     */
+    public void renameItem(int accountId, String currentPath, String newName) throws IOException {
+        if (currentPath == null || newName == null || newName.isBlank()) {
+            throw new RuntimeException("Đường dẫn hoặc tên mới không được để trống!");
+        }
 
-    // 2. Kiểm tra quyền WRITE tại thư mục cha
-    List<FolderPermission> permissions = getValidPermissions(accountId, aliasName, relativePath);
-    String accountToken = "," + accountId + ",";
-    boolean canWrite = permissions.stream()
-            .anyMatch(p -> p.getWriteAccountIds() != null && p.getWriteAccountIds().contains(accountToken));
+        // 1. Phân tích đường dẫn hiện tại
+        String decodedPath = URLDecoder.decode(currentPath, StandardCharsets.UTF_8).trim().replace("\\", "/");
+        if (decodedPath.startsWith("/"))
+            decodedPath = decodedPath.substring(1);
 
-    if (!canWrite) {
-        throw new RuntimeException("Access Denied: Bạn không có quyền tạo thư mục tại đây!");
+        int firstSlash = decodedPath.indexOf('/');
+        String aliasName = firstSlash != -1 ? decodedPath.substring(0, firstSlash) : decodedPath;
+        String oldRelativePath = firstSlash != -1 ? decodedPath.substring(firstSlash + 1) : "";
+
+        Path oldPhysical = getPhysicalSafePath(aliasName, oldRelativePath).toAbsolutePath().normalize();
+        if (!Files.exists(oldPhysical)) {
+            throw new RuntimeException("Đối tượng nguồn không tồn tại!");
+        }
+
+        // 2. Kiểm tra quyền WRITE tại thư mục cha của đối tượng cần đổi tên
+        Path parentDir = oldPhysical.getParent();
+        Path rootDir = getPhysicalSafePath(aliasName, "").toAbsolutePath().normalize();
+
+        // Nếu file nằm ngay gốc, parentRelPath sẽ là rỗng
+        String parentRelPath = "";
+        if (parentDir != null && !parentDir.equals(rootDir)) {
+            parentRelPath = rootDir.relativize(parentDir).toString().replace("\\", "/");
+        }
+
+        List<FolderPermission> permissions = getValidPermissions(accountId, aliasName, parentRelPath);
+        String accountToken = "," + accountId + ",";
+        boolean canWrite = permissions.stream()
+                .anyMatch(p -> p.getWriteAccountIds() != null && p.getWriteAccountIds().contains(accountToken));
+
+        if (!canWrite) {
+            throw new RuntimeException("Access Denied: Bạn không có quyền đổi tên đối tượng này!");
+        }
+
+        // 3. Thực hiện đổi tên
+        Path newPhysical = oldPhysical.resolveSibling(newName);
+        if (Files.exists(newPhysical)) {
+            throw new RuntimeException("Tên mới đã bị trùng với một file/thư mục khác!");
+        }
+
+        Files.move(oldPhysical, newPhysical, StandardCopyOption.REPLACE_EXISTING);
     }
 
-    // 3. Tạo đường dẫn vật lý và kiểm tra tồn tại
-    Path parentDir = getPhysicalSafePath(aliasName, relativePath).toAbsolutePath().normalize();
-    Path newFolderPath = parentDir.resolve(folderName).normalize();
-
-    if (Files.exists(newFolderPath)) {
-        throw new RuntimeException("Thư mục đã tồn tại: " + folderName);
+    private void saveHistoryAction(String acction, int accid) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("Acction", acction);
+        data.put("AccountID", accid);
+        dynamicTableService.insert("AcctionFile", data, "");
+        data.clear();
     }
-
-    Files.createDirectory(newFolderPath);
-}
-
-/**
- * Chức năng đổi tên file hoặc thư mục
- */
-public void renameItem(int accountId, String currentPath, String newName) throws IOException {
-    if (currentPath == null || newName == null || newName.isBlank()) {
-        throw new RuntimeException("Đường dẫn hoặc tên mới không được để trống!");
-    }
-
-    // 1. Phân tích đường dẫn hiện tại
-    String decodedPath = URLDecoder.decode(currentPath, StandardCharsets.UTF_8).trim().replace("\\", "/");
-    if (decodedPath.startsWith("/")) decodedPath = decodedPath.substring(1);
-    
-    int firstSlash = decodedPath.indexOf('/');
-    String aliasName = firstSlash != -1 ? decodedPath.substring(0, firstSlash) : decodedPath;
-    String oldRelativePath = firstSlash != -1 ? decodedPath.substring(firstSlash + 1) : "";
-
-    Path oldPhysical = getPhysicalSafePath(aliasName, oldRelativePath).toAbsolutePath().normalize();
-    if (!Files.exists(oldPhysical)) {
-        throw new RuntimeException("Đối tượng nguồn không tồn tại!");
-    }
-
-    // 2. Kiểm tra quyền WRITE tại thư mục cha của đối tượng cần đổi tên
-    Path parentDir = oldPhysical.getParent();
-    Path rootDir = getPhysicalSafePath(aliasName, "").toAbsolutePath().normalize();
-    
-    // Nếu file nằm ngay gốc, parentRelPath sẽ là rỗng
-    String parentRelPath = "";
-    if (parentDir != null && !parentDir.equals(rootDir)) {
-        parentRelPath = rootDir.relativize(parentDir).toString().replace("\\", "/");
-    }
-
-    List<FolderPermission> permissions = getValidPermissions(accountId, aliasName, parentRelPath);
-    String accountToken = "," + accountId + ",";
-    boolean canWrite = permissions.stream()
-            .anyMatch(p -> p.getWriteAccountIds() != null && p.getWriteAccountIds().contains(accountToken));
-
-    if (!canWrite) {
-        throw new RuntimeException("Access Denied: Bạn không có quyền đổi tên đối tượng này!");
-    }
-
-    // 3. Thực hiện đổi tên
-    Path newPhysical = oldPhysical.resolveSibling(newName);
-    if (Files.exists(newPhysical)) {
-        throw new RuntimeException("Tên mới đã bị trùng với một file/thư mục khác!");
-    }
-
-    Files.move(oldPhysical, newPhysical, StandardCopyOption.REPLACE_EXISTING);
-}
 
 }

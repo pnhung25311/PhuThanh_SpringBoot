@@ -41,22 +41,37 @@ public class BusinessService {
 
             String line;
 
-            while ((line = br.readLine()) != null) {
+while ((line = br.readLine()) != null) {
+    // Nếu dòng trống hoàn toàn thì bỏ qua
+    if (line.trim().isEmpty()) continue; 
 
-                String[] values = line.split(";", -1);
+    String[] values = line.split(";", -1);
+    Map<String, String> row = new LinkedHashMap<>();
 
-                Map<String, String> row = new LinkedHashMap<>();
+    // Sử dụng Math.min để tránh lỗi nếu values dài hơn hoặc ngắn hơn headers
+    int limit = Math.min(headers.length, values.length);
 
-                for (int i = 0; i < headers.length; i++) {
+    for (int i = 0; i < headers.length; i++) {
+        // Trim() header để xóa khoảng trắng thừa nếu có
+        String key = headers[i].trim(); 
+        String value = "";
+        
+        if (i < values.length) {
+            value = values[i].trim(); // Trim luôn giá trị để sạch dữ liệu
+        }
+        if (key.equals("Thông số kỹ thuật")) {
+            System.out.println(value);
+        }
 
-                    String key = headers[i];
-                    String value = i < values.length ? values[i] : "";
+        row.put(key, value);
+    }
 
-                    row.put(key, value);
-                }
+    // --- ĐOẠN DEBUG: Thêm dòng này vào để kiểm tra trên Console ---
+    // System.out.println("DEBUG DÒNG: " + row); 
+    // -------------------------------------------------------------
 
-                result.add(row);
-            }
+    result.add(row);
+}
 
         } catch (Exception e) {
             e.printStackTrace();
