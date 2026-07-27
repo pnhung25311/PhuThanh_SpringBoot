@@ -177,6 +177,20 @@ public class FileController {
         }
     }
 
+    @GetMapping("/file/download-inventorywarning")
+    public ResponseEntity<String> zipFolder() {
+        try {
+            // String inputFolder = "D:\\Data\\filecsv\\output";
+            // String zipFilePath = "D:\\Data\\filecsv\\output_warning.zip";
+            String inputFolder = "D:\\SERVER DATA\\InventoryWarning\\output";
+            String zipFilePath = "D:\\SERVER DATA\\InventoryWarning\\output_warning.zip";
+            fileService.zipDirectory(inputFolder, zipFilePath);
+            return ResponseEntity.ok("Nén thư mục thành công!");
+        } catch (IOException e) {
+            return ResponseEntity.status(500).body("Lỗi khi nén thư mục: " + e.getMessage());
+        }
+    }
+
     /**
      * 4. API XÓA FILE HOẶC THƯ MỤC VẬT LÝ (Kiểm tra phân quyền writeAccountIds đệ
      * quy ngược)

@@ -30,6 +30,7 @@ public class SecurityConfig {
                                                                 "/ws/**",
                                                                 "/api/file/update/**",
                                                                 "/api/files/**",
+                                                                "/api/file/download-inventorywarning",
                                                                 "/api/update/**",
                                                                 "/api/dynamic/version-warehouse",
                                                                 "/api/business/get-all")

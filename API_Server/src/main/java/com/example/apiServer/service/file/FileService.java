@@ -11,7 +11,10 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.core.io.Resource;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.HashMap;
@@ -19,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 
@@ -738,4 +743,48 @@ public class FileService {
         data.clear();
     }
 
+/**
+     * Nén một thư mục thành file ZIP
+     */
+    public void zipDirectory(String sourceFolderPath, String outputZipFilePath) throws IOException {
+        File sourceDir = new File(sourceFolderPath);
+        try (FileOutputStream fos = new FileOutputStream(outputZipFilePath);
+             ZipOutputStream zos = new ZipOutputStream(fos)) {
+            zipFile(sourceDir, sourceDir.getName(), zos);
+        }
+    }
+
+    private void zipFile(File fileToZip, String fileName, ZipOutputStream zos) throws IOException {
+        if (fileToZip.isHidden()) {
+            return;
+        }
+        if (fileToZip.isDirectory()) {
+            if (fileName.endsWith("/")) {
+                zos.putNextEntry(new ZipEntry(fileName));
+            } else {
+                zos.putNextEntry(new ZipEntry(fileName + "/"));
+            }
+            zos.closeEntry();
+            File[] children = fileToZip.listFiles();
+            if (children != null) {
+                for (File childFile : children) {
+                    zipFile(childFile, fileName + "/" + childFile.getName(), zos);
+                }
+            }
+            return;
+        }
+
+        try (FileInputStream fis = new FileInputStream(fileToZip)) {
+            ZipEntry zipEntry = new ZipEntry(fileName);
+            zos.putNextEntry(zipEntry);
+            byte[] bytes = new byte[1024];
+            int length;
+            while ((length = fis.read(bytes)) >= 0) {
+                zos.write(bytes, 0, length);
+            }
+        }
+    }
+
+    
+    
 }
